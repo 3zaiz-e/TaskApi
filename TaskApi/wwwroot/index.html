@@ -1,6 +1,147 @@
-﻿namespace TaskApi.wwwroot
-{
-    public class index
-    {
-    }
-}
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task API Manager</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f4f4f9;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        input[type="text"] {
+            padding: 8px;
+            width: 70%;
+            margin-right: 5px;
+        }
+
+        button {
+            padding: 8px 15px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+            button:hover {
+                background: #0056b3;
+            }
+
+        ul {
+            padding-left: 0;
+            list-style: none;
+        }
+
+        li {
+            background: #fff;
+            padding: 10px;
+            margin-bottom: 8px;
+            border: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 4px;
+        }
+
+        .actions button {
+            background: #dc3545;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+            .actions button.done-btn {
+                background: #28a745;
+                margin-right: 5px;
+            }
+    </style>
+</head>
+<body>
+
+    <h2>Task API Dashboard</h2>
+
+    <div class="card">
+        <h3>Add New Task</h3>
+        <input type="text" id="taskTitle" placeholder="Enter task title...">
+        <button onclick="createTask()">Add Task</button>
+    </div>
+
+    <div class="card">
+        <h3>Tasks List</h3>
+        <ul id="taskList">Loading...</ul>
+    </div>
+
+    <script>
+        const API_URL = '';
+
+        async function fetchTasks() {
+            try {
+                const res = await fetch(`${API_URL}/tasks`);
+                const tasks = await res.json();
+                const list = document.getElementById('taskList');
+                list.innerHTML = '';
+
+                if (tasks.length === 0) {
+                    list.innerHTML = '<li>No tasks found.</li>';
+                    return;
+                }
+
+                tasks.forEach(t => {
+                    list.innerHTML += `
+                        <li style="text-decoration: ${t.done ? 'line-through' : 'none'}">
+                            <span><b>#${t.id}</b> - ${t.title}</span>
+                            <div class="actions">
+                                <button class="done-btn" onclick="toggleTask(${t.id}, '${t.title}', ${!t.done})">${t.done ? 'Undo' : 'Done'}</button>
+                                <button onclick="deleteTask(${t.id})">Delete</button>
+                            </div>
+                        </li>`;
+                });
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function createTask() {
+            const title = document.getElementById('taskTitle').value;
+            if (!title) return alert('Please enter a title');
+
+            await fetch(`${API_URL}/tasks`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: title, done: false })
+            });
+
+            document.getElementById('taskTitle').value = '';
+            fetchTasks();
+        }
+
+        async function toggleTask(id, title, doneState) {
+            await fetch(`${API_URL}/tasks/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: title, done: doneState })
+            });
+            fetchTasks();
+        }
+
+    async function deleteTask(id) {
+            await fetch(`${API_URL}/tasks/${id}`, { method: 'DELETE' });
+            fetchTasks();
+        }
+
+        fetchTasks();
+    </script>
+</body>
+</html>
